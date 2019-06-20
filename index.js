@@ -4,6 +4,7 @@ app.use(cors())
 
 
 var core = require('@iota/core');
+var validator = require('@iota/validators');
 var iota = core.composeAPI({
     provider: 'https://nodes.devnet.thetangle.org:443'
 })
@@ -24,9 +25,16 @@ app.get('/', (req, res) => res.send(`Welcome to the AKITA IOTA Devnet Faucet`))
 app.post('/send_tokens', function (request, response) {
     if (request.query.hasOwnProperty('address')) {
         let payoutaddress = request.query.address
-        response.json({  status: "ok", address: payoutaddress, message: "Sent IOTA Tokens to the given address." });
+
+        if(validator.isAddress(payoutaddress)) {
+            response.json({ status: "ok", address: payoutaddress, message: "Sent IOTA Tokens to the given address." });
+
+        } else {
+            response.json({ status: "error", message: "Invalid IOTA address." });
+        }
+
     } else {
-        response.json({ status: "error", message: "Address not in the query." });
+        response.json({ status: "error", message: "'address' not in the query." });
     }
 })
 
