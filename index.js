@@ -25,7 +25,6 @@ const db = low(adapter)
 
 if (!db.get('keyIndex').value()) {
     // setup database
-    console.log("setup database")
     db.set('keyIndex', 0)
         .write()
 }
@@ -38,7 +37,6 @@ app.post('/send_tokens', function (request, response) {
     if (request.query.hasOwnProperty('address')) {
         let payoutaddress = request.query.address
         // check if address is a valid IOTA address
-        console.log("payoutaddress", payoutaddress)
         // TODO: CHECK WHY THIS iS NOt WOrkinG: if (payoutaddress.length >= 81 && validator.isAddress(payoutaddress)) {
         if (payoutaddress.length >= 81) {
             // send iotas to the address
@@ -94,11 +92,9 @@ async function sendIotas(payoutaddress, keyIndex) {
         .then(bundle => {
             console.log('Transfer sent: https://devnet.thetangle.org/transaction/' + bundle[0].hash)
             // update key index and save it
-            console.log("key index", keyIndex)
             let new_key_index = keyIndex + 1;
             db.set('keyIndex', new_key_index)
                 .write()            
-            console.log("key index db", db.get('keyIndex').value())
         })
         .catch(err => {
             console.log(err)
