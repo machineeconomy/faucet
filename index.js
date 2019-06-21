@@ -15,19 +15,35 @@ dotenv.config();
 const PORT = process.env.PORT
 const SEED = process.env.SEED
 
-var keyIndex = 0
-var payoutamount = 10
-//before sending you should check if the previous transaction is confirmed and if it's unconfirmed promote/reattach it or wait
-//sendIotas(payoutaddress, keyIndex)
+// datavase settings
+const low = require('lowdb')
+const FileSync = require('lowdb/adapters/FileSync')
 
-app.get('/', (req, res) => res.send(`Welcome to the AKITA IOTA Devnet Faucet`))
+const adapter = new FileSync('db.json')
+const db = low(adapter)
+
+
+if (!db.get('keyIndex').value()) {
+    // setup database
+    console.log("setup database")
+    db.set('keyIndex', 0)
+        .write()
+}
+
+var payoutamount = 1
+
+app.get('/', (req, res) => {res.send(`Welcome to the AKITA IOTA Devnet Faucet!`)})
 
 app.post('/send_tokens', function (request, response) {
     if (request.query.hasOwnProperty('address')) {
         let payoutaddress = request.query.address
-
-        if(validator.isAddress(payoutaddress)) {
-            response.json({ status: "ok", address: payoutaddress, message: "Sent IOTA Tokens to the given address." });
+        // check if address is a valid IOTA address
+        console.log("payoutaddress", payoutaddress)
+        // TODO: CHECK WHY THIS iS NOt WOrkinG: if (payoutaddress.length >= 81 && validator.isAddress(payoutaddress)) {
+        if (payoutaddress.length >= 81) {
+            // send iotas to the address
+            sendIotas(payoutaddress, db.get('keyIndex').value())
+            response.json({ status: "ok", address: payoutaddress, message: "Sent IOTA Tokens to the given address.", url: `https://devnet.thetangle.org/address/${payoutaddress}`});
 
         } else {
             response.json({ status: "error", message: "Invalid IOTA address." });
@@ -46,7 +62,7 @@ var server = app.listen(PORT, function () {
 })
 
 async function sendIotas(payoutaddress, keyIndex) {
-    let inputAddress = core.generateAddress(seed, keyIndex, 2)
+    let inputAddress = core.generateAddress(SEED, keyIndex, 2)
     let balance = await iota.getBalances([inputAddress], 100)
     balance = balance.balances[0]
     if (balance < payoutamount) {
@@ -62,7 +78,7 @@ async function sendIotas(payoutaddress, keyIndex) {
         //remaining iotas
         {
             value: balance - payoutamount,
-            address: core.generateAddress(seed, keyIndex + 1, 2)
+            address: core.generateAddress(SEED, keyIndex + 1, 2)
         }]
     let options = {
         'inputs': [{
@@ -77,8 +93,12 @@ async function sendIotas(payoutaddress, keyIndex) {
         .then(trytes => iota.sendTrytes(trytes, 3, 9))
         .then(bundle => {
             console.log('Transfer sent: https://devnet.thetangle.org/transaction/' + bundle[0].hash)
-            //update keyIndex for next transfer and store it somewhere
-            keyIndex++
+            // update key index and save it
+            console.log("key index", keyIndex)
+            let new_key_index = keyIndex + 1;
+            db.set('keyIndex', new_key_index)
+                .write()            
+            console.log("key index db", db.get('keyIndex').value())
         })
         .catch(err => {
             console.log(err)
