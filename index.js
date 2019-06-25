@@ -1,7 +1,21 @@
 var app = require('express')();
+var https = require('https');
+
+// Certificate
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/akita.einfach-iota.de/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/akita.einfach-iota.de/cert.pem', 'utf8');
+const ca = fs.readFileSync('/etc/letsencrypt/live/akita.einfach-iota.de/chain.pem', 'utf8');
+
+const credentials = {
+    key: privateKey,
+    cert: certificate,
+    ca: ca
+};
+
 var cors = require('cors')
 app.use(cors())
 
+const httpsServer = https.createServer(credentials, app);
 
 var core = require('@iota/core');
 var validator = require('@iota/validators');
@@ -52,13 +66,6 @@ app.post('/send_tokens', function (request, response) {
     }
 })
 
-var server = app.listen(PORT, function () {
-    var host = server.address().address
-    var port = server.address().port
-
-    console.log("Example app listening at http://%s:%s", host, port)
-})
-
 async function sendIotas(payoutaddress, keyIndex) {
     let inputAddress = core.generateAddress(SEED, keyIndex, 2)
     let balance = await iota.getBalances([inputAddress], 100)
@@ -100,3 +107,8 @@ async function sendIotas(payoutaddress, keyIndex) {
             console.log(err)
         })
 }
+
+
+httpsServer.listen(PORT, function () {
+    console.log(`${NAME} listening on port: ${PORT}`);
+});
