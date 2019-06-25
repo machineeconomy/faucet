@@ -112,5 +112,5 @@ async function sendIotas(payoutaddress, keyIndex) {
 
 
 httpsServer.listen(PORT, function () {
-    console.log(`${NAME} listening on port: ${PORT}`);
+    console.log(`Faucet listening on port: ${PORT}`);
 });
