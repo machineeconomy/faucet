@@ -1,6 +1,6 @@
 # IOTA DEVNET FAUCET
 
-This service sends IOTA Devnet tokens to an address provided by a HTTP request to tis endpoint: 
+This service sends IOTA Devnet tokens to an address provided by a HTTP request to this endpoint: 
 
 `/send_tokens?address=<ADDRESS>`
 
