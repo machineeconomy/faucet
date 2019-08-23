@@ -52,9 +52,7 @@ app.get('/', (req, res) => {res.send(`Welcome to the AKITA IOTA Devnet Faucet!`)
 app.post('/send_tokens', function (request, response) {
     if (request.query.hasOwnProperty('address')) {
         let payoutaddress = request.query.address
-        // check if address is a valid IOTA address
-        // TODO: CHECK WHY THIS iS NOt WOrkinG: if (payoutaddress.length >= 81 && validator.isAddress(payoutaddress)) {
-        if (payoutaddress.length >= 81) {
+        if(validator.isAddress(payoutaddress) || validator.isTrytes(payoutaddress, 81)){
             // send iotas to the address
             sendIotas(payoutaddress, db.get('keyIndex').value())
             response.json({ status: "ok", address: payoutaddress, message: "Sent IOTA Tokens to the given address.", url: `https://devnet.thetangle.org/address/${payoutaddress}`});
