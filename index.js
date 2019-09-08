@@ -2,22 +2,26 @@ var fs = require('fs');
 
 var app = require('express')();
 var https = require('https');
-
-// Certificate
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/akita.einfach-iota.de/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/akita.einfach-iota.de/cert.pem', 'utf8');
-const ca = fs.readFileSync('/etc/letsencrypt/live/akita.einfach-iota.de/chain.pem', 'utf8');
-
-const credentials = {
-    key: privateKey,
-    cert: certificate,
-    ca: ca
-};
+var http = require('http');
 
 var cors = require('cors')
 app.use(cors())
 
-const httpsServer = https.createServer(credentials, app);
+
+const dotenv = require('dotenv');
+dotenv.config();
+
+let server;
+
+if (!process.env.DEVELOPMENT) {
+    server = https.createServer({
+        key: fs.readFileSync(process.env.privateKey, 'utf8'),
+        cert: fs.readFileSync(process.env.certificate, 'utf8'),
+        ca: fs.readFileSync(process.env.ca, 'utf8')
+    }, app);
+} else {
+    server = http.createServer(app);
+}
 
 var core = require('@iota/core');
 var validator = require('@iota/validators');
@@ -25,11 +29,9 @@ var iota = core.composeAPI({
     provider: 'https://nodes.devnet.thetangle.org:443'
 })
 
-const dotenv = require('dotenv');
-dotenv.config();
-
 const PORT = process.env.PORT
 const SEED = process.env.SEED
+
 
 // datavase settings
 const low = require('lowdb')
@@ -45,7 +47,7 @@ if (!db.get('keyIndex').value()) {
         .write()
 }
 
-var payoutamount = 1
+var payoutamount = 50
 
 app.get('/', (req, res) => {res.send(`Welcome to the AKITA IOTA Devnet Faucet!`)})
 
@@ -109,6 +111,6 @@ async function sendIotas(payoutaddress, keyIndex) {
 }
 
 
-httpsServer.listen(PORT, function () {
+server.listen(PORT, function () {
     console.log(`Faucet listening on port: ${PORT}`);
 });
